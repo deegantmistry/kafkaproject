@@ -15,6 +15,12 @@
   </properties>
 
   <dependencies>
+  	<dependency>
+      <groupId>com.twitter</groupId>
+      <artifactId>hbc-core</artifactId> <!-- or hbc-twitter4j -->
+      <version>2.2.0</version> <!-- or whatever the latest version is -->
+    </dependency>
+  	
   	<!-- https://mvnrepository.com/artifact/org.apache.kafka/kafka-clients -->
 	<dependency>
 	    <groupId>org.apache.kafka</groupId>
@@ -22,6 +28,7 @@
 	    <version>2.0.0</version>
 	</dependency>
 	<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-simple -->
+	
 	<dependency>
 	    <groupId>org.slf4j</groupId>
 	    <artifactId>slf4j-simple</artifactId>
@@ -34,5 +41,6 @@
       <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
+  
   </dependencies>
 </project>
