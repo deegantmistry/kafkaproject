@@ -1,5 +1,8 @@
 package com.kafka.deegant.kafkatwitterproject;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
@@ -34,6 +37,7 @@ public class TwitterProducer {
 	String accessToken = "accessToken";
 	String accessTokenSecret = "accessTokenSecret";
 	List<String> terms = Lists.newArrayList("kafka");
+	String propertyFile = "/twitterproducer/configs.properties";
 
 	
 	public TwitterProducer() {}
@@ -93,21 +97,44 @@ public class TwitterProducer {
 	}
 	
 	private KafkaProducer<String, String> createKafkaProducer() {
-		String bootstrapServer = "localhost:9092";
+
+		Properties inputProps = new Properties();
+		InputStream s = null;
+		
+		try {
+			s = new FileInputStream(propertyFile);
+			inputProps.load(s);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		// load props ///////
+		String BOOTSTRAP_SERVERS_CONFIG = inputProps.getProperty("BOOTSTRAP_SERVERS_CONFIG");
+		String ENABLE_IDEMPOTENCE_CONFIG = inputProps.getProperty("ENABLE_IDEMPOTENCE_CONFIG"); 
+		String ACKS_CONFIG = inputProps.getProperty("ACKS_CONFIG"); 
+		String MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION = inputProps.getProperty("MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION"); 
+		String COMPRESSION_TYPE_CONFIG = inputProps.getProperty("COMPRESSION_TYPE_CONFIG");
+		/////////////////////
+		
 		
 		// create producer properties
-		Properties configs = new Properties();
-		configs.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
-		configs.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-		configs.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+		Properties kafkaConfigs = new Properties();
+		kafkaConfigs.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS_CONFIG);
+		kafkaConfigs.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+		kafkaConfigs.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 		
 		// add properties for the producer to make it a safe producer
-		configs.setProperty(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
-		configs.setProperty(ProducerConfig.ACKS_CONFIG, "all");
-		configs.setProperty(ProducerConfig.RETRIES_CONFIG, Integer.toString(Integer.MAX_VALUE));
-		configs.setProperty(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "5");
-
-		KafkaProducer<String, String> producer = new KafkaProducer<>(configs);
+		kafkaConfigs.setProperty(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, ENABLE_IDEMPOTENCE_CONFIG);
+		kafkaConfigs.setProperty(ProducerConfig.ACKS_CONFIG, ACKS_CONFIG);
+		kafkaConfigs.setProperty(ProducerConfig.RETRIES_CONFIG, Integer.toString(Integer.MAX_VALUE));
+		kafkaConfigs.setProperty(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION);
+		
+		// properties for high throughput (at the expense of a little latency and some CPU cycles)
+		kafkaConfigs.setProperty(ProducerConfig.COMPRESSION_TYPE_CONFIG, COMPRESSION_TYPE_CONFIG);
+		kafkaConfigs.setProperty(ProducerConfig.BATCH_SIZE_CONFIG, Integer.toString(32*1024)); // 32KB batch size
+		kafkaConfigs.setProperty(ProducerConfig.LINGER_MS_CONFIG, "20");
+		
+		KafkaProducer<String, String> producer = new KafkaProducer<>(kafkaConfigs);
 		return producer;
 	}
 
